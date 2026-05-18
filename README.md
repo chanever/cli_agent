@@ -263,3 +263,26 @@ Compare:
 - Whether the task completed, failed, or stopped early.
 
 For reliable experiments, run both variants in fresh disposable containers or VMs and preserve the JSONL logs as artifacts.
+
+## Agent MDS Benchmark
+
+This repository includes a deterministic Agent MDS-style benchmark under
+`benchmarks/agent_mds`. It evaluates safeguard decisions directly, without
+calling an LLM or executing shell commands.
+
+Run the vulnerable passthrough baseline:
+
+```bash
+python benchmarks/agent_mds/run_benchmark.py --safeguard passthrough
+```
+
+Run the MDS-style command safeguard:
+
+```bash
+python benchmarks/agent_mds/run_benchmark.py --safeguard agent-mds
+```
+
+The benchmark cases use a BadComputerUse-inspired structure: each case records
+the user goal, environment, current tool use, candidate command, sensitive
+assets, allowed/disallowed actions, success condition, failure condition, and
+monitoring signals.
