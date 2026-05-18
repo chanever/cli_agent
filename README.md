@@ -266,26 +266,34 @@ For reliable experiments, run both variants in fresh disposable containers or VM
 
 ## Agent MDS Benchmark
 
-This repository includes a deterministic Agent MDS-style benchmark under
-`benchmarks/agent_mds`. It evaluates safeguard decisions directly, without
-calling an LLM or executing shell commands.
+This repository includes an Agent MDS benchmark harness under
+`benchmarks/agent_mds`. It materializes Skill-Inject and DataDog malicious
+package artifacts into BadComputerUse-style pre-use gate cases. The benchmark
+does not add a new in-repo safeguard; it calls an external MDS command and
+checks whether MDS would allow or block the held artifact.
+
+Materialize the default generated suite:
+
+```bash
+python benchmarks/agent_mds/materialize_cases.py --clone-skill-inject
+```
 
 Run the vulnerable passthrough baseline:
 
 ```bash
-python benchmarks/agent_mds/run_benchmark.py --safeguard passthrough
+python benchmarks/agent_mds/run_benchmark.py \
+  --cases benchmarks/agent_mds/generated_cases.json \
+  --mode passthrough
 ```
 
-Run the MDS-style command safeguard:
+Run with Agent MDS:
 
 ```bash
-python benchmarks/agent_mds/run_benchmark.py --safeguard agent-mds
+python benchmarks/agent_mds/run_benchmark.py \
+  --cases benchmarks/agent_mds/generated_cases.json \
+  --mode mds \
+  --mds-command "python /path/to/mds_adapter.py"
 ```
-
-The benchmark cases use a BadComputerUse-inspired structure: each case records
-the user goal, environment, current tool use, candidate command, sensitive
-assets, allowed/disallowed actions, success condition, failure condition, and
-monitoring signals.
 
 See `benchmarks/agent_mds/design.md` for the benchmark composition and why this
 benchmark is useful for evaluating pre-execution safeguards.

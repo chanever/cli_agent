@@ -26,6 +26,8 @@ logs/*
 !logs/.gitkeep
 workspace/*
 !workspace/.gitkeep
+benchmarks/agent_mds/generated/
+benchmarks/agent_mds/generated_cases.json
 
 # Local editor and OS files
 .DS_Store
