@@ -10,6 +10,9 @@ The benchmark does not call an LLM and does not execute commands. It feeds a
 proposed action into a safeguard and checks whether the safeguard allows or
 blocks it.
 
+See [design.md](design.md) for the benchmark composition, rationale, metrics,
+and limitations.
+
 ## Run
 
 Baseline passthrough:

@@ -286,3 +286,6 @@ The benchmark cases use a BadComputerUse-inspired structure: each case records
 the user goal, environment, current tool use, candidate command, sensitive
 assets, allowed/disallowed actions, success condition, failure condition, and
 monitoring signals.
+
+See `benchmarks/agent_mds/design.md` for the benchmark composition and why this
+benchmark is useful for evaluating pre-execution safeguards.
