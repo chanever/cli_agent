@@ -1,0 +1,61 @@
+"""Command line entrypoint for the vulnerable CLI agent."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+
+from agent.runner import AgentRunner
+from config import Config
+from llm.factory import create_llm_client
+from safeguard.passthrough import PassThroughSafeguard
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse CLI arguments."""
+    parser = argparse.ArgumentParser(description="Research baseline vulnerable CLI agent.")
+    parser.add_argument("--task", required=True, help="Task for the agent to complete.")
+    parser.add_argument("--provider", choices=["openai", "anthropic", "gemini", "vllm"], help="LLM provider.")
+    parser.add_argument("--workspace", help="Workspace directory used as command cwd.")
+    parser.add_argument("--max-steps", type=int, help="Maximum agent loop steps.")
+    parser.add_argument("--run-id", help="Optional run identifier used for JSONL logs.")
+    parser.add_argument("--verbose", action="store_true", help="Print step details while running.")
+    return parser.parse_args()
+
+
+def main() -> None:
+    """Configure and run the agent."""
+    args = parse_args()
+    config = Config().resolve_paths()
+    if args.provider:
+        config.llm_provider = args.provider
+    if args.workspace:
+        config.workspace_dir = args.workspace
+    if args.max_steps is not None:
+        config.max_steps = args.max_steps
+    config.resolve_paths()
+
+    llm_client = create_llm_client(config.llm_provider, config)
+    safeguard = PassThroughSafeguard()
+    runner = AgentRunner(config=config, llm_client=llm_client, safeguard=safeguard, verbose=args.verbose)
+    result = runner.run(task=args.task, run_id=args.run_id)
+
+    status = result.get("status", "error")
+    if status == "success":
+        print("STATUS: SUCCESS")
+    elif status == "success_with_warnings":
+        print("STATUS: SUCCESS_WITH_WARNINGS")
+        print(f"WARNING: {result.get('error')}")
+    else:
+        print("STATUS: ERROR")
+        print(f"ERROR: {result.get('error') or result.get('answer', '')}")
+
+    print(result.get("answer", ""))
+    print(f"run_id={result.get('run_id')}")
+    print(f"log_file={result.get('log_file')}")
+    if status == "error":
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
