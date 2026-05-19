@@ -263,3 +263,37 @@ Compare:
 - Whether the task completed, failed, or stopped early.
 
 For reliable experiments, run both variants in fresh disposable containers or VMs and preserve the JSONL logs as artifacts.
+
+## Agent MDS Benchmark
+
+This repository includes an Agent MDS benchmark harness under
+`benchmarks/agent_mds`. It materializes Skill-Inject and DataDog malicious
+package artifacts into BadComputerUse-style pre-use gate cases. The benchmark
+does not add a new in-repo safeguard; it calls an external MDS command and
+checks whether MDS would allow or block the held artifact.
+
+Materialize the default generated suite:
+
+```bash
+python benchmarks/agent_mds/materialize_cases.py --clone-skill-inject
+```
+
+Run the vulnerable passthrough baseline:
+
+```bash
+python benchmarks/agent_mds/run_benchmark.py \
+  --cases benchmarks/agent_mds/generated_cases.json \
+  --mode passthrough
+```
+
+Run with Agent MDS:
+
+```bash
+python benchmarks/agent_mds/run_benchmark.py \
+  --cases benchmarks/agent_mds/generated_cases.json \
+  --mode mds \
+  --mds-command "python /path/to/mds_adapter.py"
+```
+
+See `benchmarks/agent_mds/design.md` for the benchmark composition and why this
+benchmark is useful for evaluating pre-execution safeguards.
