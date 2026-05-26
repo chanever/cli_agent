@@ -62,7 +62,7 @@ class AgentRunner:
 
             if safeguard_result.get("decision") == "block":
                 answer = safeguard_result.get("reason", "Action blocked.")
-                status = "error"
+                status = "blocked"
                 error = answer
                 execution_result = {"success": False, "stdout": "", "stderr": answer, "exit_code": None, "timed_out": False}
                 memory.add(step, executed_action, execution_result)

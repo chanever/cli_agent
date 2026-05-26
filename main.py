@@ -27,7 +27,7 @@ def create_safeguard():
         project_root = Path(__file__).resolve().parents[1]
         if str(project_root) not in sys.path:
             sys.path.insert(0, str(project_root))
-        from security_framework.shadow_sandbox_safeguard import ShadowSandboxSafeguard
+        from security_framework.safeguard.shadow_sandbox_safeguard import ShadowSandboxSafeguard
 
         return ShadowSandboxSafeguard()
     raise ValueError(f"Unsupported SAFEGUARD_MODE: {mode}")
@@ -68,14 +68,19 @@ def main() -> None:
     elif status == "success_with_warnings":
         print("STATUS: SUCCESS_WITH_WARNINGS")
         print(f"WARNING: {result.get('error')}")
+    elif status == "blocked":
+        print("STATUS: BLOCKED")
+        print(f"BLOCKED: {result.get('error') or result.get('answer', '')}")
     else:
         print("STATUS: ERROR")
         print(f"ERROR: {result.get('error') or result.get('answer', '')}")
 
-    print(result.get("answer", ""))
+    answer = result.get("answer", "")
+    if answer and answer != result.get("error"):
+        print(answer)
     print(f"run_id={result.get('run_id')}")
     print(f"log_file={result.get('log_file')}")
-    if status == "error":
+    if status in {"error", "blocked"}:
         sys.exit(1)
 
 
