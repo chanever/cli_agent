@@ -51,6 +51,7 @@ class AgentRunner:
             context = {
                 "task": task,
                 "step": step,
+                "run_id": run_id,
                 "cwd": str(workspace),
                 "history": memory.recent(),
                 "last_result": last_result,

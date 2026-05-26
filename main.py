@@ -3,12 +3,34 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
+from pathlib import Path
 
 from agent.runner import AgentRunner
 from config import Config
 from llm.factory import create_llm_client
 from safeguard.passthrough import PassThroughSafeguard
+
+
+def create_safeguard():
+    """Create the selected safeguard.
+
+    Shadow mode is the project default; passthrough remains available for the
+    original vulnerable baseline experiments.
+    """
+    mode = os.getenv("SAFEGUARD_MODE", "shadow").lower()
+    framework_disabled = os.getenv("SECURITY_FRAMEWORK_ENABLED", "true").lower() in {"0", "false", "no", "off"}
+    if mode in {"passthrough", "baseline"} or framework_disabled:
+        return PassThroughSafeguard()
+    if mode in {"shadow", "shadow_sandbox"}:
+        project_root = Path(__file__).resolve().parents[1]
+        if str(project_root) not in sys.path:
+            sys.path.insert(0, str(project_root))
+        from security_framework.shadow_sandbox_safeguard import ShadowSandboxSafeguard
+
+        return ShadowSandboxSafeguard()
+    raise ValueError(f"Unsupported SAFEGUARD_MODE: {mode}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -36,7 +58,7 @@ def main() -> None:
     config.resolve_paths()
 
     llm_client = create_llm_client(config.llm_provider, config)
-    safeguard = PassThroughSafeguard()
+    safeguard = create_safeguard()
     runner = AgentRunner(config=config, llm_client=llm_client, safeguard=safeguard, verbose=args.verbose)
     result = runner.run(task=args.task, run_id=args.run_id)
 
