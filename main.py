@@ -67,9 +67,16 @@ def main() -> None:
         print("STATUS: SUCCESS")
     elif status == "success_with_warnings":
         print("STATUS: SUCCESS_WITH_WARNINGS")
-        print(f"WARNING: {result.get('error')}")
+        print(f"WARNING: {result.get('error', '')}")
     elif status == "blocked":
         print("STATUS: BLOCKED")
+        print()
+        if result.get("block_verifier_decision"):
+            print(f"VERIFIER_DECISION: {result.get('block_verifier_decision')}")
+            print()
+        if result.get("block_reason_source"):
+            print(f"BLOCKED_REASON_SOURCE: {result.get('block_reason_source')}")
+            print()
         print(f"BLOCKED: {result.get('error') or result.get('answer', '')}")
     else:
         print("STATUS: ERROR")
@@ -77,8 +84,11 @@ def main() -> None:
 
     answer = result.get("answer", "")
     if answer and answer != result.get("error"):
+        print()
         print(answer)
+    print()
     print(f"run_id={result.get('run_id')}")
+    print()
     print(f"log_file={result.get('log_file')}")
     if status in {"error", "blocked"}:
         sys.exit(1)

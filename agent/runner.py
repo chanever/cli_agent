@@ -40,6 +40,8 @@ class AgentRunner:
         status = "error"
         error = "Max steps reached."
         had_command_error = False
+        block_reason_source = ""
+        block_verifier_decision = ""
 
         for step in range(self.config.max_steps):
             prompt = build_prompt(task=task, cwd=str(workspace), history=memory.recent(), last_result=last_result)
@@ -56,6 +58,8 @@ class AgentRunner:
                 "history": memory.recent(),
                 "last_result": last_result,
             }
+            if self.verbose:
+                self._print_verbose_planned_action(step, parsed_action)
             safeguard_result = self.safeguard.inspect(parsed_action, context)
             executed_action = safeguard_result.get("action", parsed_action)
             execution_result = None
@@ -64,6 +68,12 @@ class AgentRunner:
                 answer = safeguard_result.get("reason", "Action blocked.")
                 status = "blocked"
                 error = answer
+                verifier_result = safeguard_result.get("verifier_result") or {}
+                if isinstance(verifier_result, dict):
+                    block_reason_source = verifier_result.get("reason_source") or "security_framework"
+                    block_verifier_decision = verifier_result.get("decision") or ""
+                else:
+                    block_reason_source = "security_framework"
                 execution_result = {"success": False, "stdout": "", "stderr": answer, "exit_code": None, "timed_out": False}
                 memory.add(step, executed_action, execution_result)
                 self._log_step(logger, run_id, task, step, prompt, raw_response, parsed_action, safeguard_result, executed_action, execution_result, memory)
@@ -108,7 +118,15 @@ class AgentRunner:
 
             self._log_step(logger, run_id, task, step, prompt, raw_response, parsed_action, safeguard_result, executed_action, execution_result, memory)
 
-        return {"run_id": run_id, "answer": answer, "log_file": str(logger.path), "status": status, "error": error}
+        return {
+            "run_id": run_id,
+            "answer": answer,
+            "log_file": str(logger.path),
+            "status": status,
+            "error": error,
+            "block_reason_source": block_reason_source,
+            "block_verifier_decision": block_verifier_decision,
+        }
 
     def _print_verbose_command_result(self, step: int, action: dict, result: dict) -> None:
         """Print command progress in a terminal-friendly format."""
@@ -125,6 +143,18 @@ class AgentRunner:
             print(f"[step {step}] stderr: {stderr}")
         elif stdout:
             print(f"[step {step}] stdout: {stdout}")
+
+    def _print_verbose_planned_action(self, step: int, action: dict) -> None:
+        """Print the action selected by the agent before safeguard inspection."""
+        action_type = action.get("type", "unknown")
+        print(f"[step {step}] planned_action: {action_type}")
+        if action_type == "command":
+            print(f"[step {step}] planned_command: {action.get('command', '')}")
+        elif action_type == "stop":
+            print(f"[step {step}] planned_stop: {action.get('answer', '')}")
+        reason = action.get("reason")
+        if reason:
+            print(f"[step {step}] planned_reason: {reason}")
 
     def _log_step(
         self,
